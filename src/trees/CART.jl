@@ -24,20 +24,26 @@ function majority_class(y)
 end
 
 
-function build_tree(X, y)
+function build_tree(X, y; max_depth=nothing, depth=0)
 
-    # Stopping condition:
-    # if all observations have the same label,
-    # create a leaf node.
+    # Pure node
     if length(unique(y)) == 1
         return TreeNode(y[1], nothing, nothing, nothing, nothing)
     end
 
-    # Find the best split for the current node.
+    # Maximum depth reached
+    if max_depth !== nothing && depth >= max_depth
+        return TreeNode(
+            majority_class(y),
+            nothing,
+            nothing,
+            nothing,
+            nothing
+        )
+    end
+
     feature, threshold, score = best_split(X, y)
 
-    # If no split is possible, create a leaf using
-    # the majority class.
     if feature === nothing
         return TreeNode(
             majority_class(y),
@@ -48,8 +54,6 @@ function build_tree(X, y)
         )
     end
 
-    # Partition observations using the selected feature
-    # and threshold.
     left_mask = X[:, feature] .<= threshold
     right_mask = X[:, feature] .> threshold
 
@@ -59,11 +63,20 @@ function build_tree(X, y)
     X_right = X[right_mask, :]
     y_right = y[right_mask]
 
-    # Recursive calls.
-    left_child = build_tree(X_left, y_left)
-    right_child = build_tree(X_right, y_right)
+    left_child = build_tree(
+        X_left,
+        y_left;
+        max_depth=max_depth,
+        depth=depth + 1
+    )
 
-    # Return the current decision node.
+    right_child = build_tree(
+        X_right,
+        y_right;
+        max_depth=max_depth,
+        depth=depth + 1
+    )
+
     return TreeNode(
         majority_class(y),
         feature,

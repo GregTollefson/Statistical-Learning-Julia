@@ -26,6 +26,7 @@ function gini(y)
     impurity = 1.0
 
     for c in classes
+        # Go through y and count how many elements satisfy element == c.
         p = count(==(c), y) / n
         impurity -= p^2
     end

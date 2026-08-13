@@ -1,7 +1,10 @@
 module Split
 
+using ..Gini: weighted_gini
+
 export candidate_thresholds
 export best_split_feature
+export best_split
 """
     candidate_thresholds(x)
 

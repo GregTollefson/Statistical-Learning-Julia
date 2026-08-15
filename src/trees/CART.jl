@@ -24,7 +24,7 @@ function majority_class(y)
 end
 
 
-function build_tree(X, y; max_depth=nothing, depth=0)
+function build_tree(X, y; max_depth=nothing, depth=0, mtry=nothing)
 
     # Pure node
     if length(unique(y)) == 1
@@ -42,7 +42,7 @@ function build_tree(X, y; max_depth=nothing, depth=0)
         )
     end
 
-    feature, threshold, score = best_split(X, y)
+    feature, threshold, score = best_split(X, y; mtry=mtry)
 
     if feature === nothing
         return TreeNode(
@@ -67,14 +67,16 @@ function build_tree(X, y; max_depth=nothing, depth=0)
         X_left,
         y_left;
         max_depth=max_depth,
-        depth=depth + 1
+        depth=depth + 1,
+        mtry=mtry
     )
 
     right_child = build_tree(
         X_right,
         y_right;
         max_depth=max_depth,
-        depth=depth + 1
+        depth=depth + 1,
+        mtry=mtry
     )
 
     return TreeNode(

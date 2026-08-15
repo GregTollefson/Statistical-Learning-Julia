@@ -1,5 +1,5 @@
-function build_bagged_trees(X, y, n_trees::Int; max_depth=10)
-    trees = []
+function build_bagged_trees(X, y, n_trees::Int; max_depth=10, mtry=nothing)
+    forest = []
 
     for b in 1:n_trees
         boot_idx, oob_idx = bootstrap_indices(length(y))
@@ -10,14 +10,16 @@ function build_bagged_trees(X, y, n_trees::Int; max_depth=10)
         tree = CART.build_tree(
             X_boot,
             y_boot;
-            max_depth=max_depth
+            max_depth=max_depth,
+            mtry=mtry
         )
 
-        push!(trees, tree)
+        push!(forest, (tree=tree, oob_idx=oob_idx))
     end
 
-    return trees
+    return forest
 end
+
 function majority_vote(predictions)
     classes = unique(predictions)
 
@@ -34,4 +36,33 @@ function majority_vote(predictions)
     end
 
     return best_class
+end
+
+function predict_forest(trees, x)
+    predictions = [
+        Predict.predict(tree, x)
+        for tree in trees
+    ]
+
+    return majority_vote(predictions)
+end
+function predict_oob(forest, X, i)
+    predictions = Int[]
+
+    for member in forest
+        if i in member.oob_idx
+            prediction = Predict.predict(
+                member.tree,
+                X[i, :]
+            )
+
+            push!(predictions, prediction)
+        end
+    end
+
+    if isempty(predictions)
+        return nothing
+    end
+
+    return majority_vote(predictions)
 end

@@ -1,5 +1,6 @@
 module Split
 
+using Random: randperm 
 using ..Gini: weighted_gini
 
 export candidate_thresholds
@@ -69,28 +70,45 @@ function best_split_feature(x, y)
     return best_threshold, best_score
 end
 
-"""
-    best_split(X, y)
 
-Find the best split across all features in the feature matrix X.
+
+"""
+    best_split(X, y; mtry=nothing)
+
+Find the best split across candidate features in the feature matrix `X`.
+
+If `mtry` is `nothing`, all features are considered (standard CART).
+
+If `mtry` is an integer, a random subset of `mtry` features is selected
+and only those features are considered (Random Forest behavior).
 
 Returns:
 - the index of the best feature
 - the best threshold
 - the corresponding weighted Gini score
 """
-function best_split(X, y)
+function best_split(X, y; mtry=nothing)
 
     size(X, 1) == length(y) ||
         error("X and y must contain the same number of observations.")
 
     n_features = size(X, 2)
 
+    candidate_features =
+        if isnothing(mtry)
+            1:n_features
+        else
+            mtry <= n_features ||
+                error("mtry cannot exceed the number of features.")
+
+            randperm(n_features)[1:mtry]
+        end
+
     best_feature = nothing
     best_threshold = nothing
     best_score = Inf
 
-    for j in 1:n_features
+    for j in candidate_features
 
         x = X[:, j]
 
